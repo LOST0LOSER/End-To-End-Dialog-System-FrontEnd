@@ -1,28 +1,31 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
-  </div>
+  <q-layout view="lHh Lpr lFf" id="LayoutDefault">
+    <q-page-container class="glossy">
+      <router-view></router-view>
+    </q-page-container>
+  </q-layout>
 </template>
-
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-
 export default {
-  name: 'App',
-  components: {
-    HelloWorld
+  name: "LayoutDefault",
+  components: {},
+  mounted() {
+    if (this.$q.platform.isdesktop) {
+      document.body.style.zoom(1.5);
+    }
+  },
+  data() {
+    return {
+      leftDrawerOpen: false
+    };
   }
-}
+};
 </script>
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+<style lang="scss" scoped>
+#LayoutDefault{
+  overflow: hidden;
+  margin: 0 0;
+  height: 100vh;
 }
 </style>
