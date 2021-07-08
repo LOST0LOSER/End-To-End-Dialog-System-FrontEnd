@@ -1,14 +1,14 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Charts from '../views/Charts.vue'
+import Chats from '../views/Chats.vue'
 
 Vue.use(VueRouter)
 
 const routes = [
   {
     path: '/',
-    name: 'Charts',
-    component: Charts
+    name: 'Chats',
+    component: Chats
   },
   {
     path: '/about',

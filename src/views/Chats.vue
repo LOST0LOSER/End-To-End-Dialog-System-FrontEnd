@@ -2,13 +2,13 @@
   <div class="column">
     <q-scroll-area
       ref="ScrollArea"
-      style="width: 100%; height: 100vh;"
+      style="width: 100%; height: calc(100vh - 3.3rem);"
       :thumb-style="thumbStyle"
       :bar-style="barStyle"
       class="Scroll"
       v-scroll="scroll_fn"
     >
-      <q-page class="Charts column q-pa-md" style="auto">
+      <q-page class="Chats column q-pa-md" style="auto">
         <transition
           name="slowdown"
           appear
@@ -24,7 +24,6 @@
             >
               <q-chat-message
                 name="Me"
-                avatar="https://cdn.quasar.dev/img/avatar3.jpg"
                 :text="dialog.userMessages"
                 :stamp="dialog.timeStamp"
                 sent
@@ -32,7 +31,11 @@
                 filled
                 padding="lg"
                 class="col-md-12"
-              />
+              >
+                <template v-slot:avatar class="margin-left">
+                  <i class="iconfont margin-left">&#xe736;</i>
+                </template>
+              </q-chat-message>
               <q-chat-message
                 name="Bot"
                 :text="dialog.botMessages"
@@ -47,29 +50,30 @@
                 </template>
               </q-chat-message>
             </div>
-
-            
           </div>
         </transition>
       </q-page>
     </q-scroll-area>
 
-    <div class="col input-box">
-      <form class="input-box float-right vertical-bottom absolute-bottom col">
+    <div class="col">
+      <form
+        class="input-box float-right vertical-bottom absolute-bottom col"
+        fixed
+      >
         <q-input
-          z-top
           outlined
-          color="black"
+          color="primary"
+          label-color="red"
           v-model="inputMessage"
           type="text"
           class="Input"
-          placeholder="消息"
-          autogrow
+          :placeholder="placeMessage"
+          hide-bottom-space
+          hide-hint
         >
+          <!-- :rules="[val=>!!val||'输入不能为空']" -->
           <template v-slot:append>
             <q-btn
-              z-top
-              fixed
               color="primary"
               type="submit"
               icon="check"
@@ -89,78 +93,87 @@
 // @ is an alias to /src
 import { debounce } from "quasar";
 export default {
-  name: "Charts",
+  name: "Chats",
   data() {
     return {
       dialogs: [
-        {
-          userMessages: ["hey, how are you?"],
-          botMessages: ["fine,what about you?"],
-          timeStamp: undefined,
-          something_else: null
-        }
+        
       ],
       dateObj: new Date(),
       lastTime: undefined,
       inputMessage: "",
-
+      placeMessage: "消息",
+      alertFlag:false,
       thumbStyle: {
         right: "0.4rem",
         borderRadius: "5px",
         backgroundColor: "#027be3",
-        width: "0.8rem",
-        opacity: 0.75
+        width: "0.6rem",
+        opacity: 0.75,
       },
 
       barStyle: {
         right: "0.2rem",
         borderRadius: "9px",
         backgroundColor: "#027be3",
-        width: "1.2rem",
-        opacity: 0.2
-      }
+        width: "1rem",
+        opacity: 0.2,
+      },
     };
   },
   mounted() {
-    let example = this.dialogs[0];
-    this.dialogs = [];
-    this.lastTime = this.dateObj.toLocaleTimeString(0);
-    for (let i = 0; i < 10; i++) {
-      // let temp = this.dialogs[0];
-      console.log(this.lastTime);
-      example.timeStamp = this.lastTime;
-      if (i > 0) {
-        this.dialogs.push(example);
-        // this.timeStamp.push(this.dateObj.getMinutes() - this.lastTime);
-      }
-    }
+    // let example = {
+    //    userMessages: ["hey, how are you?"],
+    //    botMessages: ["fine,what about you?"],
+    //    timeStamp: undefined,
+    //    something_else: null,
+    // };
+    // this.dialogs = [];
+    // this.lastTime = this.dateObj.toLocaleTimeString(0);
+    // for (let i = 0; i < 10; i++) {
+    //   // let temp = this.dialogs[0];
+    //   console.log(this.lastTime);
+    //   example.timeStamp = this.lastTime;
+    //   if (i > 0) {
+    //     this.dialogs.push(example);
+    //     // this.timeStamp.push(this.dateObj.getMinutes() - this.lastTime);
+    //   }
+    // }
+
     // const Container = this.$refs["dialogsContainer"];
     // Container.scrollTop = Container.scrollHeight;
   },
   methods: {
     onSend(text) {
       // this.dialogs.push({userMessages:[text],botMessages:[]});
-      this.$set(this.dialogs);
-      this.axios
-        .post("api/dialog", { text: text })
-        .then(res => {
-          const recData = res.data;
-          this.dialogs.push({
-            userMessages: [text],
-            botMessages: [recData["text"]],
-            // this.dateObj.
-            timeStamp: this.dateObj.toLocaleTimeString(0),
-            something_else: null
+      // this.$set(this.dialogs);
+      if (!this.ifInputBlank(text)) {
+        this.placeMessage="消息";
+        this.alertFlag = false;
+        this.axios
+          .post("api/dialog", { text: text })
+          .then((res) => {
+            const recData = res.data;
+            this.dialogs.push({
+              userMessages: [text],
+              botMessages: [recData["text"]],
+              // this.dateObj.
+              timeStamp: this.dateObj.toLocaleTimeString(0),
+              something_else: null,
+            });
+            console.log(recData);
+            // 滑动下拉
+            this.fixdialogsHeight();
+          })
+          .catch((err) => {
+            // this.dialogs;
+            alert("网络好像出现点意外");
+            console.error(err);
           });
-          console.log(recData);
-          // 滑动下拉
-          this.fixdialogsHeight();
-        })
-        .catch(err => {
-          // this.dialogs;
-          alert("网络好像出现点意外");
-          console.error(err);
-        });
+      }else{
+        this.placeMessage = "输入不能为空！";
+        this.alertFlag = true;
+      }
     },
     fixdialogsHeight() {
       this.$nextTick(() => {
@@ -186,25 +199,32 @@ export default {
         // }, 200);
       });
     },
+    ifInputBlank(inputMessage) {
+      return (
+        inputMessage === "" ||
+        inputMessage === undefined ||
+        inputMessage === null
+      );
+    },
     caltimeStamp() {
       const date = Date();
       let minutes = ["", date.getMinutes().slice(-2)].join("");
       return minutes;
     },
     onReset() {
-      this.inputMessage = null;
+      this.inputMessage = "";
     },
-    scroll_fn: debounce(position => {
+    scroll_fn: debounce((position) => {
       // jumpToPosition
       this.setScrollPosition(position);
-    }, 200)
+    }, 200),
     // scrolled(detail){
     //   const position = detail.position;
     //   const direction= detail.direction;
     //   const directionChanged = detail.directionChanged;
     //   const inflexionPosition = detail.inflexionPosition;
     // }
-  }
+  },
   // watch:{
   //   dialogs:{
   //     handler(oldVal,newVal){
@@ -220,14 +240,10 @@ export default {
 <style lang="scss" scoped>
 @import "~quasar-styl";
 @font-face {
-  font-family: "iconfont"; /* project id 1429837 */
-  src: url("//at.alicdn.com/t/font_1429837_h16rsz7raq9.eot");
-  src: url("//at.alicdn.com/t/font_1429837_h16rsz7raq9.eot?#iefix")
-      format("embedded-opentype"),
-    url("//at.alicdn.com/t/font_1429837_h16rsz7raq9.woff2") format("woff2"),
-    url("//at.alicdn.com/t/font_1429837_h16rsz7raq9.woff") format("woff"),
-    url("//at.alicdn.com/t/font_1429837_h16rsz7raq9.ttf") format("truetype"),
-    url("//at.alicdn.com/t/font_1429837_h16rsz7raq9.svg#iconfont") format("svg");
+  font-family: 'iconfont';  /* Project id 2530469 */
+  src: url('//at.alicdn.com/t/font_2530469_z1k5td71dl.woff2?t=1620323316362') format('woff2'),
+       url('//at.alicdn.com/t/font_2530469_z1k5td71dl.woff?t=1620323316362') format('woff'),
+       url('//at.alicdn.com/t/font_2530469_z1k5td71dl.ttf?t=1620323316362') format('truetype');
 }
 .iconfont {
   font-family: "iconfont" !important;
@@ -272,27 +288,42 @@ $font-size: 20px;
 .margin-right {
   margin: 0 8px 0 0;
 }
-.input-box {
-  margin: 0 1.6rem 0 0;
-  padding: 6rem auto;
-  opacity: 1;
+.margin-left {
+  margin: 0 0 0 8px;
 }
-.Charts {
+.Chats {
   margin: 0 1.3rem 0 0;
 }
 .Input {
   font-size: 20px;
+  color: brown;
+
 }
 .noScroll {
   overflow: hidden;
   overflow-y: hidden;
 }
-/* .inputMessage {
-} */
-
-// @media screen {
+::placeholder{
+  color: red;
+}
+.Input::placeholder{
+  opacity: 1;
+}
+// .Input::-webkit-input-placeholder { /* WebKit browsers */
+//     color:    rgb(156, 41, 41);
 // }
-// @media screen and (max-width:700px) {
-//   font-size: 12px;
+// .Input:-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+//     color:    rgb(156, 41, 41);
 // }
+// .Input::-moz-placeholder { /* Mozilla Firefox 19+ */
+//     color:    rgb(156, 41, 41);
+// }
+// .Input:-ms-input-placeholder { /* Internet Explorer 10+ */
+//     color:    rgb(156, 41, 41);
+// }
+input::placeholder {
+  color: red;
+  font-size: 1.2em;
+  font-style: italic;
+}
 </style>
